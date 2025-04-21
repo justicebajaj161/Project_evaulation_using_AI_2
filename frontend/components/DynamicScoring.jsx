@@ -31,7 +31,7 @@ export default function DynamicScoring() {
   };
 
   useEffect(() => {
-    localStorage.setItem('scoringPattern', JSON.stringify(rows));
+    localStorage.setItem('scoring_pattern', JSON.stringify(rows));
   }, [rows]);
 
   return (

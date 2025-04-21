@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import DynamicScoring from '@/components/DynamicScoring';
 import { useRouter } from 'next/navigation';
 
@@ -11,14 +11,13 @@ export default function AdminPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Store criteria in localStorage or context
+    // Store criteria in localStorage
     const evaluationCriteria = {
-      projectAbout,
-      technology,
-      problemStatement,
-      scoringPattern: JSON.parse(localStorage.getItem('scoringPattern'))
+      project_about: projectAbout,  // Changed to match backend
+      technology: technology,
+      problem_statement: problemStatement,  // Changed to match backend
+      scoring_pattern: JSON.parse(localStorage.getItem('scoring_pattern'))  // Changed to match backend
     };
-    console.log(evaluationCriteria)
     localStorage.setItem('evaluationCriteria', JSON.stringify(evaluationCriteria));
     router.push('/submit');
   };

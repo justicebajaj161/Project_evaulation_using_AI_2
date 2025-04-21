@@ -26,24 +26,26 @@ export default function SubmitPage() {
       // Get criteria from localStorage
       const criteria = JSON.parse(localStorage.getItem('evaluationCriteria'));
       
-      // Add criteria to formData
-      Object.entries(criteria).forEach(([key, value]) => {
-        if (key === 'scoringPattern') {
-          formData.append(key, JSON.stringify(value));
-        } else {
-          formData.append(key, value);
-        }
-      });
-      console.log(formData)
+      // Add criteria to formData with exact backend field names
+      formData.append('project_about', criteria.project_about);
+      formData.append('technology', criteria.technology);
+      formData.append('problem_statement', criteria.problem_statement);
+      formData.append('scoring_pattern', JSON.stringify(criteria.scoring_pattern));
+
+      // Debug: Log formData entries
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+
       const result = await submitProject(formData);
       localStorage.setItem('evaluationResult', JSON.stringify(result));
       router.push('/results');
     } catch (err) {
       setError(err.message || 'Submission failed');
+      console.error('Submission error:', err);
     } finally {
       setIsSubmitting(false);
     }
-    
   };
 
   return (

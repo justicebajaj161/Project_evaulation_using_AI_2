@@ -28,9 +28,9 @@ export default function ResultsPage() {
       
       <div className="mb-8 p-4 bg-gray-100 rounded">
         <h2 className="text-xl font-semibold mb-2">Project Criteria</h2>
-        <p><strong>About:</strong> {criteria.projectAbout}</p>
+        <p><strong>About:</strong> {criteria.project_about}</p>
         <p><strong>Technology:</strong> {criteria.technology}</p>
-        <p><strong>Problem Statement:</strong> {criteria.problemStatement}</p>
+        <p><strong>Problem Statement:</strong> {criteria.problem_statement}</p>
       </div>
       
       <ResultCard result={result} />
