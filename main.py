@@ -125,7 +125,8 @@ def analyze_with_ai(project_path: str, analysis_request: AnalysisRequest) -> dic
     STRICT VALIDATION REQUIREMENTS:
     1. Project must be about: {analysis_request.project_about}
     2. Must use technology: {analysis_request.technology}
-    3. Must have no syntax errors or incomplete code
+    3. Must have no syntax errors or incomplete code or pass:false if any code is missing or incomplete or if the point number 1 or 2 is not met.
+    4. Do not give pass: false if the code is not well maintained or not well structured, I want to check if the code is compilable or not. Not looking for well maintained or well structured code.
     
     CODE CONTEXT:
     {context}
