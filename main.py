@@ -11,6 +11,8 @@ import logging
 from typing import Dict, List
 from pydantic import BaseModel
 import json
+from fastapi.middleware.cors import CORSMiddleware
+
 
 # Load environment variables
 load_dotenv()
@@ -20,6 +22,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Configuration
 CHROMA_DB_PATH = os.path.abspath("./chroma_db")
@@ -226,7 +236,29 @@ async def analyze_project(
     problem_statement: str = Form(...),
     scoring_pattern: str = Form(...)
 ):
+
     try:
+                # Debug logging
+        logger.info(f"Received file: {zip_file.filename} (size: {zip_file.size})")
+        
+        # Create temp directory
+        temp_dir = "temp_project"
+        os.makedirs(temp_dir, exist_ok=True)
+
+        # Save uploaded zip with a consistent name
+        zip_path = os.path.join(temp_dir, "uploaded_project.zip")
+        
+        # IMPORTANT: Use async file operations for UploadFile
+        with open(zip_path, "wb") as buffer:
+            # Read the file in chunks to handle large files
+            while contents := await zip_file.read(1024 * 1024):  # 1MB chunks
+                buffer.write(contents)
+        
+        logger.info(f"File saved to: {zip_path}")
+
+        # Rest of your processing code...
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(temp_dir)
         # Parse scoring pattern from JSON string
         import json
         try:
