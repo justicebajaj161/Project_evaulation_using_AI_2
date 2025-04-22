@@ -122,7 +122,7 @@ def analyze_with_ai(project_path: str, analysis_request: AnalysisRequest) -> dic
     # Get relevant code context
     results = collection.query(
         query_texts=["Show me all important code files"],
-        n_results=min(20, collection.count()))
+        n_results=min(40, collection.count()))
     
     context = "\n\n".join([
         f"=== FILE: {meta['path']} ===\n{doc}"
@@ -154,7 +154,7 @@ def analyze_with_ai(project_path: str, analysis_request: AnalysisRequest) -> dic
     """
     
     phase1_response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4.1",
         messages=[{"role": "user", "content": phase1_prompt}],
         temperature=0.0,
         response_format={"type": "json_object"}
@@ -183,12 +183,14 @@ def analyze_with_ai(project_path: str, analysis_request: AnalysisRequest) -> dic
     
     INSTRUCTIONS:
     1. Evaluate each scoring component strictly
-    2. Deduct points for any missing/incomplete features
-    3. Provide specific feedback for each component
-    4. Calculate total score (0-100)
+    2. Deduct points for any incomplete features
+    3. If doesn_it_exist is false, return 0 score
+    4. Provide specific feedback for each component
+    5. Calculate total score (0-100)
     
     RESPONSE FORMAT (JSON):
     {{
+        "does_it_exist?": boolean,
         "score": int,
         "component_evaluations": [
             {{
@@ -203,7 +205,7 @@ def analyze_with_ai(project_path: str, analysis_request: AnalysisRequest) -> dic
     """
     
     phase2_response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4.1",
         messages=[{"role": "user", "content": phase2_prompt}],
         temperature=0.1,
         response_format={"type": "json_object"}
