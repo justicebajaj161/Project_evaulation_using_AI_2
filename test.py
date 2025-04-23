@@ -7,7 +7,7 @@ file_path = "Restaurantsolution.zip"
 # file_path = "destinationsolution.zip"
 # file_path = "contactbook.zip"
 
-# Define the evaluation criteria
+
 project_about = "Restaurant Application"
 technology = "HTML/CSS/JavaScript"
 problem_statement = """Create a responsive Restaurant web application with a Bootstrap-integrated navbar for navigation, search functionality, and filter buttons for categorizing and searching menu items."""

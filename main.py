@@ -14,10 +14,10 @@ import json
 from fastapi.middleware.cors import CORSMiddleware
 
 
-# Load environment variables
+
 load_dotenv()
 
-# Setup logging
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -30,12 +30,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# Configuration
+
 CHROMA_DB_PATH = os.path.abspath("./chroma_db")
 EMBEDDING_MODEL = "text-embedding-3-small"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# Pydantic models for request validation
+
 class ScoringPattern(BaseModel):
     component: str
     max_score: int
@@ -46,7 +46,7 @@ class AnalysisRequest(BaseModel):
     problem_statement: str
     scoring_pattern: List[ScoringPattern]
 
-# Initialize clients
+
 def get_chroma_client():
     return PersistentClient(path=CHROMA_DB_PATH)
 
@@ -64,7 +64,7 @@ def setup_chromadb(project_path: str) -> int:
     code_files = []
     supported_extensions = ('.html', '.js', '.jsx', '.ts', '.tsx', '.css', '.py', '.java', '.php')
     
-    # Walk through all directories and subdirectories
+    
     for root, _, files in os.walk(project_path):
         for file in files:
             if file.lower().endswith(supported_extensions):
@@ -72,7 +72,7 @@ def setup_chromadb(project_path: str) -> int:
                 try:
                     with open(file_path, 'r', encoding='utf-8') as f:
                         content = f.read()
-                        # Store relative path to project root
+                        
                         rel_path = os.path.relpath(file_path, project_path)
                         code_files.append({
                             'path': rel_path,
@@ -85,16 +85,16 @@ def setup_chromadb(project_path: str) -> int:
     if not code_files:
         return 0
     
-    # Prepare data for ChromaDB
+    
     documents = [f"{f['path']}\n{f['content']}" for f in code_files]
     metadatas = [{"path": f["path"]} for f in code_files]
     ids = [f"id_{i}" for i in range(len(code_files))]
     
     try:
-        # Clear existing data
+        
         collection.delete(ids=ids)
         
-        # Add new documents
+        
         collection.add(
             documents=documents,
             metadatas=metadatas,
@@ -119,7 +119,7 @@ def analyze_with_ai(project_path: str, analysis_request: AnalysisRequest) -> dic
     client = get_openai_client()
     collection = get_chroma_client().get_collection("code_analysis")
     
-    # Get relevant code context
+    
     results = collection.query(
         query_texts=["Show me all important code files"],
         n_results=min(40, collection.count()))
@@ -129,7 +129,7 @@ def analyze_with_ai(project_path: str, analysis_request: AnalysisRequest) -> dic
         for doc, meta in zip(results['documents'][0], results['metadatas'][0])
     ])
     
-    # PHASE 1: Strict validation prompt
+    
     phase1_prompt = f"""
     STRICT VALIDATION REQUIREMENTS:
     1. Project must be about: {analysis_request.project_about}
@@ -170,7 +170,7 @@ def analyze_with_ai(project_path: str, analysis_request: AnalysisRequest) -> dic
             "score": 0
         }
     
-    # PHASE 2: Detailed evaluation (only if phase1 passed)
+    
     scoring_prompt = generate_scoring_prompt_section(analysis_request.scoring_pattern)
     
     phase2_prompt = f"""
@@ -186,7 +186,7 @@ def analyze_with_ai(project_path: str, analysis_request: AnalysisRequest) -> dic
     2. Deduct points for any incomplete features
     3. If doesn_it_exist is false, return 0 score
     4. Provide specific feedback for each component
-    5. Calculate total score (0-100)
+    5. Calculate total score (0-100), which should also be equal to the sum of all individual component scores
     
     RESPONSE FORMAT (JSON):
     {{
@@ -238,7 +238,7 @@ async def analyze_project(
     scoring_pattern: str = Form(...)
 ):
     try:
-        # Parse scoring pattern from JSON string
+        
         import json
         try:
             scoring_data = json.loads(scoring_pattern)
@@ -248,12 +248,12 @@ async def analyze_project(
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Error parsing scoring pattern: {str(e)}")
         
-        # Validate total score sums to 100
+        
         total_score = sum(item.max_score for item in scoring_objects)
         if total_score != 100:
             raise HTTPException(status_code=400, detail="Scoring pattern must sum to 100")
         
-        # Create analysis request object
+        
         analysis_request = AnalysisRequest(
             project_about=project_about,
             technology=technology,
@@ -261,36 +261,36 @@ async def analyze_project(
             scoring_pattern=scoring_objects
         )
         
-        # Create temp directory
+        
         temp_dir = "temp_project"
         os.makedirs(temp_dir, exist_ok=True)
 
-        # Save uploaded zip
+        
         zip_path = os.path.join(temp_dir, zip_file.filename)
         with open(zip_path, "wb") as buffer:
             shutil.copyfileobj(zip_file.file, buffer)
 
-        # Unzip the project
+        
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(temp_dir)
 
-        # Find project directory (handle nested zip structures)
+        
         project_dir = temp_dir
         contents = os.listdir(temp_dir)
         
-        # If there's only one directory in the zip, use that as project root
+        
         if len(contents) == 1 and os.path.isdir(os.path.join(temp_dir, contents[0])):
             project_dir = os.path.join(temp_dir, contents[0])
 
-        # Process files into ChromaDB
+        
         file_count = setup_chromadb(project_dir)
         if file_count == 0:
             raise HTTPException(status_code=400, detail="No relevant code files found or the file is not compilable")
 
-        # Get AI analysis
+        
         analysis = analyze_with_ai(project_dir, analysis_request)
 
-        # Clean up
+        
         shutil.rmtree(temp_dir, ignore_errors=True)
         cleanup_chromadb()
 
@@ -310,7 +310,7 @@ async def analyze_project(
         raise he
     except Exception as e:
         logger.error(f"Error in analyze_project: {str(e)}")
-        # Clean up even if there's an error
+        
         shutil.rmtree("temp_project", ignore_errors=True)
         cleanup_chromadb()
         raise HTTPException(status_code=500, detail=str(e))
